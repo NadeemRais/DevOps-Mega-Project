@@ -63,22 +63,6 @@ pipeline {
             }
         }
 
-        stage('Docker Build & Push') {
-            steps {
-                script {
-
-                    sh 'docker build -t wanderlust .'
-
-                    sh 'docker tag tetrisv2 nadeem90/wanderlust:latest'
-
-                    withDockerRegistry([credentialsId: 'docker']) {
-
-                        sh 'docker push nadeem90/wanderlust:latest'
-                    }
-                }
-            }
-        }
-
         stage('TRIVY Image Scan') {
             steps {
                 sh 'trivy image nadeem90/wanderlust:latest > trivyimage.txt'
