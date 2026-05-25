@@ -1,0 +1,149 @@
+pipeline {
+    agent any
+
+    tools {
+        jdk 'jdk17'
+        nodejs 'node16'
+    }
+
+    environment {
+        SCANNER_HOME = tool 'sonar-scanner'
+        GIT_REPO_NAME = "DevOps-Mega-Project.git"
+        GIT_USER_NAME = "NadeemRais"
+        BACKEND_IMAGE = "nadeem90/wanderlust-backend"
+        FRONTEND_IMAGE = "nadeem90/wanderlust-frontend"
+        BACKEND_TAG = "v1"
+        FRONTEND_TAG = "v1"
+    }
+
+    stages {
+
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+
+        stage('Checkout Application Code') {
+            steps {
+                git branch: 'main',
+                url: 'https://github.com/NadeemRais/DevOps-Mega-Project.git'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonar-server') {
+                    sh """
+                    $SCANNER_HOME/bin/sonar-scanner \
+                    -Dsonar.projectName=wanderlust \
+                    -Dsonar.projectKey=wanderlust
+                    """
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                script {
+                    waitForQualityGate abortPipeline: false, credentialsId: 'Sonar-token'
+                }
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
+            }
+        }
+
+        stage('TRIVY FS SCAN') {
+            steps {
+                sh 'trivy fs . > trivyfs.txt'
+            }
+        }
+
+        stage('Docker Build & Push') {
+            steps {
+                script {
+
+                    sh 'docker build -t wanderlust .'
+
+                    sh 'docker tag tetrisv2 nadeem90/wanderlust:latest'
+
+                    withDockerRegistry([credentialsId: 'docker']) {
+
+                        sh 'docker push nadeem90/wanderlust:latest'
+                    }
+                }
+            }
+        }
+
+        stage('TRIVY Image Scan') {
+            steps {
+                sh 'trivy image nadeem90/wanderlust:latest > trivyimage.txt'
+            }
+        }
+
+        stage('Checkout Deployment Repo') {
+            steps {
+                dir('deployment-repo') {
+
+                    git branch: 'main',
+                    url: 'https://github.com/NadeemRais/DevOps-Mega-Project.git'
+                }
+            }
+        }
+        stage('Build Backend Docker Image') {
+            steps {
+                dir('backend') {
+
+                    sh """
+                    docker build -t ${BACKEND_IMAGE}:${BACKEND_TAG} .
+                    """
+                }
+            }
+        }
+
+        stage('Build Frontend Docker Image') {
+            steps {
+                dir('frontend') {
+
+                    sh """
+                    docker build -t ${FRONTEND_IMAGE}:${FRONTEND_TAG} .
+                    """
+                }
+            }
+        }
+
+        stage('Docker Login') {
+            steps {
+
+                withDockerRegistry([credentialsId: 'docker']) {
+
+                    sh 'docker info'
+                }
+            }
+        }
+
+        stage('Push Backend Docker Image') {
+            steps {
+
+                sh """
+                docker push ${BACKEND_IMAGE}:${BACKEND_TAG}
+                """
+            }
+        }
+
+        stage('Push Frontend Docker Image') {
+            steps {
+
+                sh """
+                docker push ${FRONTEND_IMAGE}:${FRONTEND_TAG}
+                """
+            }
+        
+        }
+
+    }
+}
