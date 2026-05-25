@@ -108,6 +108,22 @@ pipeline {
                 """
             }
         }
+        stage('Trigger Deployment Update Job') {
+
+            steps {
+
+                build job: 'update-k8s-manifest',
+
+                parameters: [
+
+                    string(name: 'BACKEND_TAG', value: "${BACKEND_TAG}"),
+
+                    string(name: 'FRONTEND_TAG', value: "${FRONTEND_TAG}")
+                ],
+
+            wait: true
+            }
+        }
 
     }
 }
