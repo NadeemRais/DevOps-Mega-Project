@@ -63,12 +63,6 @@ pipeline {
             }
         }
 
-        stage('TRIVY Image Scan') {
-            steps {
-                sh 'trivy image nadeem90/wanderlust:latest > trivyimage.txt'
-            }
-        }
-
         stage('Build & Push Backend Image') {
             steps {
                 dir('backend') {
@@ -95,6 +89,23 @@ pipeline {
                 """
                     }
                 }
+            }
+        }
+        stage('TRIVY Backend Image Scan') {
+            steps {
+
+                sh """
+                trivy image ${BACKEND_IMAGE}:${BACKEND_TAG} > backend-trivy-report.txt
+                """
+            }
+        }
+
+        stage('TRIVY Frontend Image Scan') {
+            steps {
+
+                sh """
+                trivy image ${FRONTEND_IMAGE}:${FRONTEND_TAG} > frontend-trivy-report.txt
+                """
             }
         }
 
