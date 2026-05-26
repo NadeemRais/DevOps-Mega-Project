@@ -12,8 +12,8 @@ pipeline {
         GIT_USER_NAME = "NadeemRais"
         BACKEND_IMAGE = "nadeem90/wanderlust-backend"
         FRONTEND_IMAGE = "nadeem90/wanderlust-frontend"
-        BACKEND_TAG = "v2"
-        FRONTEND_TAG = "v2"
+        BACKEND_TAG = "v4"
+        FRONTEND_TAG = "v4"
     }
 
     stages {
