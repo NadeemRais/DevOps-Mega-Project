@@ -23,7 +23,7 @@ spec:
       containers:
         - name: frontend
 
-          image: nadeem90/wanderlust-frontend:v2
+          image: nadeem90/wanderlust-frontend:v5
 
           ports:
             - containerPort: 8080
